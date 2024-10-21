@@ -1,3 +1,8 @@
+# Advent of Code 2022
+This repo contains problems and solutions for the 2022 Avent of Code challenge. Spoilers included!
+
+The repo is forked from @ehlee-bird's `ilikeclojure` repo, because I have no idea what I'm doing with Clojure and the repo works well.
+
 # ilikeclojure
 
 I really like working and Clojure and I like it even better when others can
