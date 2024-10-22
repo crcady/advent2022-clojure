@@ -1,6 +1,5 @@
 (ns day04.core
-  (:require [clojure.string :as str]
-            [clojure.set :as set]))
+  (:require [clojure.string :as str]))
 
 (defn load-as-lines
   "Load a file out of the data/day04 directory as lines"
