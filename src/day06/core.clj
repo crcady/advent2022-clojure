@@ -7,11 +7,11 @@
 (defn to-first-packet
   "Returns the number of characters that have to be read to find four unique characters in a row"
   ([input-string]
-   (to-first-marker 4 input-string))
+   (to-first-packet 4 input-string))
   ([num-read current-string]
    (if (= (count (set (take 4 current-string))) 4)
      num-read
-     (to-first-marker (inc num-read) (drop 1 current-string)))))
+     (to-first-packet (inc num-read) (drop 1 current-string)))))
 
 (defn to-first-message
   "Returns the number of characters that have to be read to find 14 unique characters in a row"
