@@ -68,8 +68,44 @@
 
 (def visible (complement hidden))
 
+(defn scenic-up
+  [forest tree]
+  (let [taller-trees (filter #(and (= (:col %) (:col tree)) (< (:row %) (:row tree)) (>= (:height %) (:height tree))) forest)]
+    (if (empty? taller-trees)
+      (:row tree)
+      (- (:row tree) (apply max (map :row taller-trees))))))
+
+(defn scenic-down
+  [forest tree]
+  (let [taller-trees (filter #(and (= (:col %) (:col tree)) (> (:row %) (:row tree)) (>= (:height %) (:height tree))) forest)]
+    (if (empty? taller-trees)
+      (- (apply max (map :row forest)) (:row tree))
+      (- (apply min (map :row taller-trees)) (:row tree)))))
+
+(defn scenic-left
+  [forest tree]
+  (let [taller-trees (filter #(and (< (:col %) (:col tree)) (= (:row %) (:row tree)) (>= (:height %) (:height tree))) forest)]
+    (if (empty? taller-trees)
+      (:col tree)
+      (- (:col tree) (apply max (map :col taller-trees))))))
+
+(defn scenic-right
+  [forest tree]
+  (let [taller-trees (filter #(and (> (:col %) (:col tree)) (= (:row %) (:row tree)) (>= (:height %) (:height tree))) forest)]
+    (if (empty? taller-trees)
+      (- (apply max (map :col forest)) (:col tree))
+      (- (apply min (map :col taller-trees)) (:col tree)))))
+
+(defn scenic-score
+  [forest tree]
+  (* (scenic-up forest tree) (scenic-down forest tree) (scenic-left forest tree) (scenic-right forest tree)))
+
 (defn solve-first
   [fname]
   (let [trees (load-as-woods fname)]
     (count (filter (partial visible trees) trees))))
 
+(defn solve-second
+  [fname]
+  (let [trees (load-as-woods fname)]
+    (apply max (map (partial scenic-score trees) trees))))
