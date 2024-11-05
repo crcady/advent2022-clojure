@@ -21,6 +21,15 @@
   [fname]
   (map (fn [lr n] {:id (inc n) :left (first lr) :right (second lr)}) (map str/split-lines (str/split (slurp (str "data/day13/" fname)) #"\n\n")) (range)))
 
+(defn load-as-list
+  [fname]
+  (map #(read-string %) (filter not-empty (str/split-lines (slurp (str "data/day13/" fname))))))
+
 (defn solve-first
   [fname]
   (reduce + (map :id (filter #(check (read-string (:left %)) (read-string (:right %))) (load-as-dicts fname)))))
+
+(defn solve-second
+  [fname]
+  (let [mapped-lines (into {} (map (fn [item id] (vector item (inc id))) (sort check (conj (load-as-list fname) [[2]] [[6]])) (range)))]
+    (* (get mapped-lines [[2]]) (get mapped-lines [[6]]))))
