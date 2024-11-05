@@ -1,9 +1,9 @@
-(ns day13.core)
+(ns day13.core
+  (:require [clojure.string :as str]))
 
 (defn check
   [left right & remaining-or-nil]
   (let [remaining (if (nil? remaining-or-nil) () (seq remaining-or-nil))]
-    (println left right remaining-or-nil "->" remaining)
     (cond
       (and (number? left) (number? right)) (if (= left right)
                                              (recur (first remaining) (second remaining) (vec (drop 2 remaining)))
@@ -16,3 +16,11 @@
                                                (and (nil? first-left) (nil? first-right)) (recur (first remaining) (second remaining) (vec (drop 2 remaining)))
                                                :else (nil? first-left)))
       :else (throw (Exception. "Unexpected types"))))) ; This will throw if two identical vectors are thrown at it - which is illegal per the problem setup
+
+(defn load-as-dicts
+  [fname]
+  (map (fn [lr n] {:id (inc n) :left (first lr) :right (second lr)}) (map str/split-lines (str/split (slurp (str "data/day13/" fname)) #"\n\n")) (range)))
+
+(defn solve-first
+  [fname]
+  (reduce + (map :id (filter #(check (read-string (:left %)) (read-string (:right %))) (load-as-dicts fname)))))
