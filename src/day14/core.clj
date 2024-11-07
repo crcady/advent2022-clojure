@@ -49,6 +49,7 @@
 
 ;; Now we can combine those
 (defn add-grain
+  "Adds a grain, unless it falls off"
   [start-point rocks]
   (loop [sand start-point]
     (let [next (apply-gravity rocks sand)]
@@ -58,15 +59,38 @@
           (recur next))
         (cons sand rocks)))))
 
+(defn add-grain2
+  "Adds a grain, if there's room"
+  [start-point rocks]
+  (if (= start-point (first rocks)) ; This feels super hacky, but should be safe because we're consing
+    rocks
+    (loop [sand start-point]
+      (let [next (apply-gravity rocks sand)]
+        (if next
+          (recur next)
+          (cons sand rocks))))))
+
 (defn add-many-grains
-  [start-point first-rocks]
+  [start-point add-fn first-rocks]
   (loop [rocks first-rocks]
-    (let [next (add-grain start-point rocks)]
+    (when (zero? (mod (count rocks) 100))
+      (println (count rocks)))
+    (let [next (add-fn start-point rocks)]
       (if (= (count rocks) (count next))
         rocks
         (recur next)))))
 
-(def fill (partial add-many-grains {:x 500 :y 0}))
+;; Need to fill out the floor, so that we can just re-use the drop function and most of the add-many-grains function
+(defn add-floor
+  [rocks]
+  (let [max-y (:y (last (sort-by :y rocks)))
+        floor-y (+ 2 max-y)
+        min-x (- 499 floor-y)
+        max-x (+ 502 floor-y)]
+    (reduce #(cons {:x %2 :y floor-y} %1) rocks (range min-x max-x))))
+
+(def fill (partial add-many-grains {:x 500 :y 0} add-grain))
+(def fill2 (partial add-many-grains {:x 500 :y 0} add-grain2))
 
 (defn load-as-matches
   [fname]
@@ -97,3 +121,13 @@
   [fname]
   (let [rocks (point-list fname)]
     (- (count (fill rocks)) (count rocks))))
+
+(defn solve-second
+  [fname]
+  (let [rocks (add-floor (point-list fname))
+        min-x (:x (first (sort-by :x rocks)))
+        max-x (:x (last (sort-by :x rocks)))
+        max-y (:y (last (sort-by :y rocks)))
+        min-y (:y (first (sort-by :y rocks)))]
+    (println "Maximum theoretical size is " (/ (* (- max-x min-x) (- max-y 0)) 2))
+    (- (count (fill2 rocks)) (count rocks))))
