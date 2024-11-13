@@ -26,3 +26,47 @@
   [fname y]
   (let [ranges (project-to-line (load-as-coords fname) y)]
     (reduce + (map #(- (:right %) (:left %)) ranges))))
+
+(defn augment-coord
+  [coordinate]
+  (assoc coordinate :range (+ (abs (- (:sx coordinate) (:bx coordinate))) (abs (- (:sy coordinate) (:by coordinate))))))
+
+(defn in-range
+  [point sensor]
+  (<= (+ (abs (- (:x point) (:sx sensor))) (abs (- (:y point) (:sy sensor)))) (:range sensor)))
+
+(defn intersection
+  [up-b down-b]
+  (let [delta-b (- down-b up-b)]
+    (if (even? delta-b)
+      {:x (/ delta-b 2) :y (/ (+ up-b down-b) 2)}
+      nil)))
+
+(defn get-up-intercepts
+  [coord]
+  (list (+ (- (:sy coord) (:sx coord)) (inc (:range coord))) (- (- (:sy coord) (:sx coord)) (inc (:range coord)))))
+
+(defn get-down-intercepts
+  [coord]
+  (list (+ (+ (:sy coord) (:sx coord)) (inc (:range coord))) (- (+ (:sy coord) (:sx coord)) (inc (:range coord)))))
+
+(defn not-seen
+  [sensors point]
+  (not-any? true? (map #(in-range point %) sensors)))
+
+(defn solve-second
+  [fname square-size]
+  (let [sensors (map augment-coord (load-as-coords fname))
+        up-intercepts (reduce concat (map get-up-intercepts sensors))
+        down-intercepts (reduce concat (map get-down-intercepts sensors))
+        candidates (for [up-b up-intercepts
+                         down-b down-intercepts
+                         :let [int-point (intersection up-b down-b)]
+                         :when (some? int-point)]
+                     int-point)]
+    (->> candidates
+         (set)
+         (filter #(and (>= (:x %) 0) (>= (:y %) 0) (<= (:x %) square-size) (<= (:y %) square-size)))
+         (filter (partial not-seen sensors))
+         (map #(+ (:y %) (* 4000000 (:x %))))
+         (first))))
