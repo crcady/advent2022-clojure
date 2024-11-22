@@ -28,9 +28,9 @@
   (cond
     (<= y 0) false ; Hit floor 
     (< x 0) false ; Hit left wall
-    (> x 6) false ; Hit right wall
-    (> y (count rows)) true ; Above any piece 
-    :else (not (nth (nth rows (dec y)) x)))) ; Check the actual board
+    (> x 6) false ; Hit right wall 
+    (> y (:num @(first rows))) true ; Above any piece 
+    :else (not (nth (:values @(first (filter (fn [x] (= (:num @x) y)) rows))) x)))) ; Check the actual board
 
 (defn check-pieces
   "True when every piece is legally placed"
@@ -40,15 +40,16 @@
 (defn extend-rows
   [rows height]
   (loop [rows rows]
-    (if (< (count rows) height)
-      (recur (conj rows [false false false false false false false]))
+    (if (< (:num @(first rows)) height)
+      (recur (cons (atom {:num (inc (:num @(first rows))) :values [false false false false false false false]}) rows))
       rows)))
 
 (defn write-piece
   "Write a single piece into an (already extended) row table"
   [rows {x :x y :y}]
-  (let [old-row (nth rows (dec y))]
-    (assoc rows (dec y) (assoc old-row x true))))
+  (let [old-row (first (filter (fn [x] (= (:num @x) y)) rows)) old-values (:values @old-row)]
+    (swap! old-row assoc :values (assoc old-values x true))
+    rows)) ; Turn to take-while in order to "sweep" rows
 
 (defn write-to-rows
   "Write pieces into a row table"
@@ -66,7 +67,7 @@
         (assoc current-state
                :rows new-rows
                :piece-count new-piece-count
-               :current-pieces (mk-piece (+ (count new-rows) 4) (mod new-piece-count 5)))))))
+               :current-pieces (mk-piece (+ (:num @(first new-rows)) 4) (mod new-piece-count 5)))))))
 
 (defn apply-wind
   "Tries to move the pieces one position left or right. Updates wind index."
@@ -83,7 +84,7 @@
 
 (defn initial-state
   [wind]
-  {:rows []
+  {:rows (list (atom {:num 0 :values [true true true true true true true]}))
    :wind wind
    :wind-index 0
    :current-pieces (mk-piece 4 0)
@@ -93,5 +94,5 @@
   [fname]
   (loop [state (initial-state (load-as-wind fname))]
     (if (= 2022 (:piece-count state))
-      (count (:rows state))
+      (:num @(first (:rows state)))
       (recur (apply-gravity (apply-wind state))))))
