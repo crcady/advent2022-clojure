@@ -49,13 +49,20 @@
   [rows {x :x y :y}]
   (let [old-row (first (filter (fn [x] (= (:num @x) y)) rows)) old-values (:values @old-row)]
     (swap! old-row assoc :values (assoc old-values x true))
-    rows)) ; Turn to take-while in order to "sweep" rows
+    rows))
+
+(defn sweep
+  [rows]
+  (let [swept-list (take-while (fn [x] (not= (:values @x) [true true true true true true true])) rows)]
+    (if (< (count swept-list) (count rows))
+      (take (inc (count swept-list)) rows)
+      rows)))
 
 (defn write-to-rows
   "Write pieces into a row table"
   [rows pieces]
   (let [max-height (apply max (map :y pieces)) new-rows (extend-rows rows max-height)]
-    (reduce #(write-piece %1 %2) new-rows pieces)))
+    (sweep (reduce #(write-piece %1 %2) new-rows pieces))))
 
 (defn apply-gravity
   "Tries to move the current pieces down, if it can, does so. If not, it saves it into the state and spawns a new piece."
@@ -96,3 +103,35 @@
     (if (= 2022 (:piece-count state))
       (:num @(first (:rows state)))
       (recur (apply-gravity (apply-wind state))))))
+
+(defn solve-nth
+  [fname num]
+  (loop [state (initial-state (load-as-wind fname))]
+    (if (= num (:piece-count state))
+      (:num @(first (:rows state)))
+      (recur (apply-gravity (apply-wind state))))))
+
+(defn make-key
+  [state]
+  (let [values (map (fn [x] (:values @x)) (:rows state))]
+    values))
+
+(defn make-value
+  [state]
+  (:piece-count state))
+
+(defn run-until-new-piece
+  [{piece-count :piece-count :as state}]
+  (loop [next-state (apply-gravity (apply-wind state))]
+    (if (= piece-count (:piece-count next-state))
+      (recur (apply-gravity (apply-wind next-state)))
+      next-state)))
+
+(defn solve-second
+  [fname]
+  (loop [state (initial-state (load-as-wind fname)) cache {}]
+    (let [next-state (run-until-new-piece state)
+          cache-hit (get cache (make-key next-state))]
+      (if cache-hit
+        (println "Got a hit after" (:piece-count next-state))
+        (recur next-state (assoc cache (make-key next-state) (make-value next-state)))))))
